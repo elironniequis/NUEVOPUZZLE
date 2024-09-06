@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle 3x3 con Búsqueda</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f7f9fc;
+        }
+
+        .game-container {
+            width: 600px;
+            padding: 20px;
+            border: 5px solid #2c3e50;
+            background-color: #ecf0f1;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-container h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Título colorido */
+        .title span:nth-child(1) { color: #e74c3c; }
+        .title span:nth-child(2) { color: #3498db; }
+        .title span:nth-child(3) { color: #2ecc71; }
+        .title span:nth-child(4) { color: #f1c40f; }
+        .title span:nth-child(5) { color: #9b59b6; }
+        .title span:nth-child(6) { color: #e67e22; }
+        .title span:nth-child(7) { color: #1abc9c; }
+        .title span:nth-child(8) { color: #34495e; }
+        .title span:nth-child(9) { color: #e74c3c; }
+
+        .container {
+            display: flex;
+            flex-direction: row;
+            margin-bottom: 20px;
+        }
+
+        .puzzle-container {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            border: 5px solid #7f8c8d;
+            padding: 10px;
+            box-sizing: border-box;
+            background-color: #ecf0f1;
+            position: relative;
+            width: 315px;
+            height: 315px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .piece {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #3498db;
+            color: white;
+            border: 2px solid #2c3e50;
+            font-size: 24px;
+            font-weight: bold;
+            width: 100px;
+            height: 100px;
+            position: absolute;
+            transition: top 0.3s ease, left 0.3s ease;
+            border-radius: 10px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .blank {
+            background-color: #bdc3c7;
+            border: 2px solid #2c3e50;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #e67e22;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #d35400;
+        }
+
+        .info-container {
+            margin-left: 20px;
+            width: 220px;
+            border: 2px solid #34495e;
+            padding: 10px;
+            background-color: #fafafa;
+            height: 315px;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h3 {
+            color: #2980b9;
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .step {
+            margin-bottom: 10px;
+            background-color: #95a5a6;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        #message {
+            color: green;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        /* Color styles for each number */
+        .piece:nth-child(1) { background-color: #1abc9c; }
+        .piece:nth-child(2) { background-color: #3498db; }
+        .piece:nth-child(3) { background-color: #e74c3c; }
+        .piece:nth-child(4) { background-color: #9b59b6; }
+        .piece:nth-child(5) { background-color: #f1c40f; }
+        .piece:nth-child(6) { background-color: #e67e22; }
+        .piece:nth-child(7) { background-color: #2ecc71; }
+        .piece:nth-child(8) { background-color: #34495e; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">
+            <span>P</span><span>u</span><span>z</span><span>z</span><span>l</span><span>e</span> <span>3</span><span>x</span><span>3</span>
+        </h1>
+        <div class="container">
+            <div class="puzzle-container" id="puzzle">
+                <div class="piece" id="piece-1">1</div>
+                <div class="piece" id="piece-2">2</div>
+                <div class="piece" id="piece-3">3</div>
+                <div class="piece" id="piece-4">4</div>
+                <div class="piece" id="piece-5">5</div>
+                <div class="piece" id="piece-6">6</div>
+                <div class="piece" id="piece-7">7</div>
+                <div class="piece" id="piece-8">8</div>
+                <div class="piece blank" id="blank"></div>
+            </div>
+            <div class="info-container" id="info">
+                <h3>Pasos realizados</h3>
+                <div id="steps"></div>
+                <div id="message"></div>
+            </div>
+        </div>
+
+        <button onclick="mezclarPuzzle()">Mezclar Puzzle</button>
+        <button onclick="solvePuzzle()">Resolver Puzzle</button>
+    </div>
+
+    <script>
+        const pieces = Array.from(document.querySelectorAll(".piece:not(.blank)"));
+        const blank = document.getElementById("blank");
+
+        let positions = [
+            { top: 0, left: 0 }, { top: 0, left: 105 }, { top: 0, left: 210 },
+            { top: 105, left: 0 }, { top: 105, left: 105 }, { top: 105, left: 210 },
+            { top: 210, left: 0 }, { top: 210, left: 105 }
+        ];
+
+        let blankPos = { top: 210, left: 210 };
+
+        const estadoObjetivo = [
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 0]  // Estado objetivo correcto con el espacio vacío en la esquina inferior derecha
+        ];
+
+        // Configurar posiciones iniciales
+        function setPositions() {
+            pieces.forEach((piece, index) => {
+                piece.style.top = positions[index].top + 'px';
+                piece.style.left = positions[index].left + 'px';
+            });
+            blank.style.top = blankPos.top + 'px';
+            blank.style.left = blankPos.left + 'px';
+        }
+
+        // Función para mezclar el puzzle
+        function mezclarPuzzle() {
+            limpiarMensaje();
+            limpiarPasos();
+            const movimientos = [
+                [-1, 0], // Arriba
+                [0, 1],  // Derecha
+                [1, 0],  // Abajo
+                [0, -1]  // Izquierda
+            ];
+
+            for (let i = 0; i < 100; i++) {
+                const [x, y] = encontrarPosicionCero(estadoActual());
+
+                const movimientosValidos = movimientos.filter(([dx, dy]) => {
+                    const nuevoX = x + dx;
+                    const nuevoY = y + dy;
+                    return nuevoX >= 0 && nuevoX < 3 && nuevoY >= 0 && nuevoY < 3;
+                });
+
+                const [dx, dy] = movimientosValidos[Math.floor(Math.random() * movimientosValidos.length)];
+                intercambiarPosicionesVisuales(x, y, x + dx, y + dy);
+            }
+        }
+
+        // Función para encontrar el hueco (0) en el estado actual
+        function encontrarPosicionCero(estado) {
+            for (let i = 0; i < estado.length; i++) {
+                for (let j = 0; j < estado[i].length; j++) {
+                    if (estado[i][j] === 0) return [i, j];
+                }
+            }
+        }
+
+        // Función para comparar si dos estados son iguales
+        function sonIguales(estado1, estado2) {
+            for (let i = 0; i < estado1.length; i++) {
+                for (let j = 0; j < estado1[i].length; j++) {
+                    if (estado1[i][j] !== estado2[i][j]) return false;
+                }
+            }
+            return true;
+        }
+
+        // Copiar una matriz de estado
+        function copiarEstado(estado) {
+            return estado.map(row => [...row]);
+        }
+
+        // Función para intercambiar dos posiciones en el estado
+        function intercambiar(estado, x1, y1, x2, y2) {
+            const nuevoEstado = copiarEstado(estado);
+            [nuevoEstado[x1][y1], nuevoEstado[x2][y2]] = [nuevoEstado[x2][y2], nuevoEstado[x1][y1]];
+            return nuevoEstado;
+        }
+
+        // Intercambiar dos posiciones en el estado visual
+        function intercambiarPosicionesVisuales(x1, y1, x2, y2) {
+            const estado = estadoActual();
+            const temp = estado[x1][y1];
+            estado[x1][y1] = estado[x2][y2];
+            estado[x2][y2] = temp;
+
+            actualizarInterfaz(estado);
+        }
+
+        // Obtener el estado actual del puzzle
+        function estadoActual() {
+            const estado = [
+                [null, null, null],
+                [null, null, null],
+                [null, null, null]
+            ];
+
+            const posiciones = {
+                "1": document.getElementById("piece-1"),
+                "2": document.getElementById("piece-2"),
+                "3": document.getElementById("piece-3"),
+                "4": document.getElementById("piece-4"),
+                "5": document.getElementById("piece-5"),
+                "6": document.getElementById("piece-6"),
+                "7": document.getElementById("piece-7"),
+                "8": document.getElementById("piece-8"),
+                "0": blank
+            };
+
+            estado.flat().forEach((_, index) => {
+                const fila = Math.floor(index / 3);
+                const columna = index % 3;
+                const pieza = Object.values(posiciones).find(p =>
+                    p.style.top === `${fila * 105}px` && p.style.left === `${columna * 105}px`);
+                estado[fila][columna] = pieza === blank ? 0 : Number(pieza.innerText);
+            });
+
+            return estado;
+        }
+
+        // Ejecutar búsqueda a lo ancho (BFS)
+        function busquedaAnchura(estadoInicial) {
+            const movimientos = [
+                [-1, 0], // Arriba
+                [0, 1],  // Derecha
+                [1, 0],  // Abajo
+                [0, -1]  // Izquierda
+            ];
+
+            let cola = [{ estado: estadoInicial, camino: [] }];
+            let visitados = new Set();
+
+            while (cola.length > 0) {
+                const { estado, camino } = cola.shift();
+
+                if (sonIguales(estado, estadoObjetivo)) {
+                    return camino;
+                }
+
+                visitados.add(JSON.stringify(estado));
+
+                const [x, y] = encontrarPosicionCero(estado);
+
+                // Generar nuevos estados moviendo el hueco (0)
+                for (const [dx, dy] of movimientos) {
+                    const nuevoX = x + dx;
+                    const nuevoY = y + dy;
+
+                    if (nuevoX >= 0 && nuevoX < 3 && nuevoY >= 0 && nuevoY < 3) {
+                        const nuevoEstado = intercambiar(estado, x, y, nuevoX, nuevoY);
+
+                        if (!visitados.has(JSON.stringify(nuevoEstado))) {
+                            cola.push({ estado: nuevoEstado, camino: [...camino, nuevoEstado] });
+                        }
+                    }
+                }
+            }
+            return [];
+        }
+
+        // Animar la solución en la interfaz
+        function animarSolucion(camino) {
+            let indice = 0;
+            limpiarPasos();
+            const interval = setInterval(() => {
+                if (indice >= camino.length) {
+                    clearInterval(interval);
+                    mostrarMensaje("¡Felicidades! Puzzle resuelto.");
+                    return;
+                }
+
+                const estado = camino[indice];
+                actualizarInterfaz(estado);
+                registrarPaso(estado);
+                indice++;
+            }, 500);
+        }
+
+        // Actualizar las posiciones en la interfaz visual según el estado
+        function actualizarInterfaz(estado) {
+            const posiciones = {
+                "0": blank,
+                "1": document.getElementById("piece-1"),
+                "2": document.getElementById("piece-2"),
+                "3": document.getElementById("piece-3"),
+                "4": document.getElementById("piece-4"),
+                "5": document.getElementById("piece-5"),
+                "6": document.getElementById("piece-6"),
+                "7": document.getElementById("piece-7"),
+                "8": document.getElementById("piece-8")
+            };
+
+            estado.flat().forEach((valor, index) => {
+                const fila = Math.floor(index / 3);
+                const columna = index % 3;
+                const pieza = posiciones[valor];
+                pieza.style.top = `${fila * 105}px`;
+                pieza.style.left = `${columna * 105}px`;
+            });
+        }
+
+        // Resolver el puzzle con BFS
+        function solvePuzzle() {
+            const estadoInicial = estadoActual();
+            const camino = busquedaAnchura(estadoInicial);
+            animarSolucion(camino);
+        }
+
+        // Mostrar mensaje de felicitación
+        function mostrarMensaje(texto) {
+            document.getElementById("message").innerText = texto;
+        }
+
+        // Limpiar el mensaje de felicitación
+        function limpiarMensaje() {
+            document.getElementById("message").innerText = "";
+        }
+
+        // Registrar cada paso en el contenedor de pasos
+        function registrarPaso(estado) {
+            const pasosContenedor = document.getElementById("steps");
+            const paso = document.createElement("div");
+            paso.classList.add("step");
+            paso.innerText = JSON.stringify(estado);
+            pasosContenedor.appendChild(paso);
+        }
+
+        // Limpiar los pasos anteriores
+        function limpiarPasos() {
+            document.getElementById("steps").innerHTML = "";
+        }
+
+        // Inicializar el puzzle con mezcla
+        setPositions();
+        mezclarPuzzle();  // Mezclar el puzzle al cargar la página
+    </script>
+</body>
+</html>
